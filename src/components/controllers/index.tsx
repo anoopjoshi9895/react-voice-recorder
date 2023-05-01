@@ -5,6 +5,7 @@ import { useStopwatch } from "react-timer-hook";
 import {
   PAUSED_PLAYING,
   PAUSED_RECORDING,
+  PLAYING,
   PLAYING_REQUESTED,
   RECORDING,
   STOPPED,
@@ -26,7 +27,7 @@ const Controllers = forwardRef(
       autoStart: false,
     });
     useEffect(() => {
-      if (audioStatus === RECORDING) {
+      if (audioStatus === RECORDING || audioStatus=== PLAYING ) {
         props.onTimerUpdated({ hours, minutes, seconds });
       }
     }, [seconds, minutes, hours]);
