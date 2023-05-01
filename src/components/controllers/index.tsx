@@ -27,9 +27,7 @@ const Controllers = forwardRef(
       autoStart: false,
     });
     useEffect(() => {
-      if (audioStatus === RECORDING || audioStatus=== PLAYING ) {
         props.onTimerUpdated({ hours, minutes, seconds });
-      }
     }, [seconds, minutes, hours]);
     useEffect(() => {
       if (audioStatus === RECORDING) {
