@@ -4,7 +4,6 @@ import React, { forwardRef, useRef, useImperativeHandle } from "react";
 import { AudioProvider, UserPropsProvider } from "../context";
 import Waveform from "./waveform";
 import Controllers from "./controllers";
-import "../styles/recorder.css";
 
 export const VoiceRecorder = forwardRef((props: VoiceRecorderProps, ref) => {
   const { mainContainerStyle, height, width, ...rest } = props as any;
