@@ -24,11 +24,12 @@
   },
   "dependencies": {
     "prop-types": "^15.8.1",
-    "react": "^18.1.0",
+    "react": ">=16",
     "react-dom": "^18.1.0",
     "react-timer-hook": "^3.0.5",
     "sass": "^1.57.1",
-    "tslib": "2.5.0"
+    "tslib": "2.5.0",
+    "wavesurfer.js": "^6.6.3"
   },
   "files": [
     "dist",
@@ -60,7 +61,7 @@
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "ts-jest": "^28.0.4",
-    "typescript": "^4.7.3",
-    "tslib": "2.5.0"
+    "tslib": "2.5.0",
+    "typescript": "^4.7.3"
   }
 }
