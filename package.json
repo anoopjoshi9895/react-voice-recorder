@@ -23,7 +23,6 @@
     "react": ">=16"
   },
   "dependencies": {
-    "audio-recorder-polyfill": "^0.4.1",
     "prop-types": "^15.8.1",
     "react": ">=16",
     "react-dom": "^18.1.0",

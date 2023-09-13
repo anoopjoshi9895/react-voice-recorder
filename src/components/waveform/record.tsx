@@ -6,7 +6,6 @@ import {
 } from "../../utils";
 import { PAUSED_RECORDING, RECORDING, STOPPED } from "../../constants";
 import React from "react";
-import { AudioRecorder } from "audio-recorder-polyfill";
 
 /**
  * CREDITS: https://codepen.io/davidtorroija/pen/ZZzLpb?editors=0010
@@ -65,48 +64,55 @@ function Record(props: { onStop: (audio: AudioRecordingDataType) => void }) {
 
   const setUpAudioAPI = (micStream: MediaStream) => {
     try {
+      // added the any type because webkitAudioContext does not exist on window typeof globalThis
       const AudioContext =
         window.AudioContext || (window as any)?.webkitAudioContext;
       const audioContext = new AudioContext();
       obj.current.audioContext = audioContext;
-
+      /* this gives you the 'audio node' whose media is obtained from the microphone */
+      /* an 'audio node' represents an audio processing module. the html audio
+      and video tags are audio nodes */
       const sourceNode = audioContext.createMediaStreamSource(micStream);
-      obj.current.analyserNode = audioContext.createAnalyser();
-      sourceNode.connect(obj?.current?.analyserNode);
 
+      /* this returns an 'analyser node' which is used to obtain
+      audio time and frequency data to create data visualizations */
+      obj.current.analyserNode = audioContext.createAnalyser();
+
+      /* connect function will connect the output of the sourceNode to the input of the analyser */
+      sourceNode.connect(obj?.current?.analyserNode);
+      /* if you want to play the audio you have to 'connect' to audioContext.destination
+      this will streamline the audio to your device's speakers  */
+
+      /* The higher the number of fftSize, the more data points we get and the more graphData we’ll display. */
       obj.current.analyserNode.fftSize = 128;
+      /* frequencyBinCount = fftSize / 2 */
       const bufferLength = obj.current.analyserNode.frequencyBinCount;
       const dataArray = new Float32Array(bufferLength);
+      /* this creates an array of size fftSize that will
+        hold all of the data points that we collect from the sound */
       obj.current.dataArray = dataArray;
 
-      const chunks = []; // To store audio data chunks
-
-      // Create an AudioRecorder instance
-      const audioRecorder = new AudioRecorder(micStream);
-
-      audioRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-
-      audioRecorder.onstop = async () => {
-        const pcmBlob = new Blob(chunks, { type: "audio/wav" });
-
-        // Convert PCM to AAC using audio-recorder-polyfill
-        const aacBlob = await audioRecorder.convertToAAC(pcmBlob);
-
+      /* this part handles the storing of audio data */
+      const mediaRecorder = new MediaRecorder(micStream);
+      obj.current.mediaRecorder = mediaRecorder;
+      mediaRecorder.start();
+      mediaRecorder.addEventListener("dataavailable", async (event) => {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         const recordingData = {
-          blob: aacBlob,
-          duration: audioContext.currentTime, // Use audioContext's time instead of audioBuffer's duration
+          blob: event.data,
+          duration: audioBuffer.duration,
           graphData: obj.current.graphData ?? [],
         };
-
         updateAudioRecording(recordingData);
         props.onStop(recordingData);
-      };
-
-      audioRecorder.start();
+      });
+      mediaRecorder.addEventListener("stop", () => {
+        // remove that red dot on the browser tab
+        micStream.getTracks().forEach((track) => track.stop());
+        sourceNode.disconnect();
+        audioContext.close();
+      });
       loop();
     } catch (error) {
       console.log("error", error);
