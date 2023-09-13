@@ -100,7 +100,7 @@ export const setUpCanvas = (
 
     return newCanvasElements;
   } catch (error) {
-    console.error("Error in setUpCanvas: ", error);
+    console.error("Error in setUpCanvas:  ", error);
     return null;
   }
 };

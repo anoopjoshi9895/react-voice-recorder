@@ -81,7 +81,7 @@ function Record(props: { onStop: (audio: AudioRecordingDataType) => void }) {
       const chunks = []; // To store audio data chunks
 
       const mediaRecorder = new MediaRecorder(micStream, {
-        mimeType: "audio/ogg; codecs=opus", // Set the desired audio format
+        mimeType: "audio/ogg; codecs=opus", //  Set the desired audio format
       });
 
       obj.current.mediaRecorder = mediaRecorder;
