@@ -64,52 +64,55 @@ function Record(props: { onStop: (audio: AudioRecordingDataType) => void }) {
 
   const setUpAudioAPI = (micStream: MediaStream) => {
     try {
+      // added the any type because webkitAudioContext does not exist on window typeof globalThis
       const AudioContext =
         window.AudioContext || (window as any)?.webkitAudioContext;
       const audioContext = new AudioContext();
       obj.current.audioContext = audioContext;
-
+      /* this gives you the 'audio node' whose media is obtained from the microphone */
+      /* an 'audio node' represents an audio processing module. the html audio
+      and video tags are audio nodes */
       const sourceNode = audioContext.createMediaStreamSource(micStream);
-      obj.current.analyserNode = audioContext.createAnalyser();
-      sourceNode.connect(obj?.current?.analyserNode);
 
+      /* this returns an 'analyser node' which is used to obtain
+      audio time and frequency data to create data visualizations */
+      obj.current.analyserNode = audioContext.createAnalyser();
+
+      /* connect function will connect the output of the sourceNode to the input of the analyser */
+      sourceNode.connect(obj?.current?.analyserNode);
+      /* if you want to play the audio you have to 'connect' to audioContext.destination
+      this will streamline the audio to your device's speakers  */
+
+      /* The higher the number of fftSize, the more data points we get and the more graphData we’ll display. */
       obj.current.analyserNode.fftSize = 128;
+      /* frequencyBinCount = fftSize / 2 */
       const bufferLength = obj.current.analyserNode.frequencyBinCount;
       const dataArray = new Float32Array(bufferLength);
+      /* this creates an array of size fftSize that will
+        hold all of the data points that we collect from the sound */
       obj.current.dataArray = dataArray;
 
-      const chunks = []; // To store audio data chunks
-
-      const mediaRecorder = new MediaRecorder(micStream, {
-        mimeType: "audio/ogg; codecs=opus", //  Set the desired audio format
-      });
-
+      /* this part handles the storing of audio data */
+      const mediaRecorder = new MediaRecorder(micStream);
       obj.current.mediaRecorder = mediaRecorder;
-
-      mediaRecorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      });
-
-      mediaRecorder.addEventListener("stop", () => {
-        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
-        const audioURL = URL.createObjectURL(blob);
-
-        // Create an <audio> element to play or save the audio
-        const audioElement = new Audio(audioURL);
-
+      mediaRecorder.start();
+      mediaRecorder.addEventListener("dataavailable", async (event) => {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         const recordingData = {
-          blob: blob,
-          duration: audioElement.duration,
+          blob: event.data,
+          duration: audioBuffer.duration,
           graphData: obj.current.graphData ?? [],
         };
-
         updateAudioRecording(recordingData);
         props.onStop(recordingData);
       });
-
-      mediaRecorder.start();
+      mediaRecorder.addEventListener("stop", () => {
+        // remove that red dot on the browser tab
+        micStream.getTracks().forEach((track) => track.stop());
+        sourceNode.disconnect();
+        audioContext.close();
+      });
       loop();
     } catch (error) {
       console.log("error", error);
