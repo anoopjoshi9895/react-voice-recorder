@@ -97,7 +97,6 @@ export const setUpCanvas = (
     scaleCanvasToOriginalSize(newCanvasElements, parentElement);
 
     appendCanvasElementsToDOM(newCanvasElements, parentElement);
-    console.log(parentElement);
 
     return newCanvasElements;
   } catch (error) {
