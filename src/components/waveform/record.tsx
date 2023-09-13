@@ -6,6 +6,7 @@ import {
 } from "../../utils";
 import { PAUSED_RECORDING, RECORDING, STOPPED } from "../../constants";
 import React from "react";
+import { AudioRecorder } from "audio-recorder-polyfill";
 
 /**
  * CREDITS: https://codepen.io/davidtorroija/pen/ZZzLpb?editors=0010
@@ -64,7 +65,6 @@ function Record(props: { onStop: (audio: AudioRecordingDataType) => void }) {
 
   const setUpAudioAPI = (micStream: MediaStream) => {
     try {
-      // added the any type because webkitAudioContext does not exist on window typeof globalThis
       const AudioContext =
         window.AudioContext || (window as any)?.webkitAudioContext;
       const audioContext = new AudioContext();
@@ -81,31 +81,32 @@ function Record(props: { onStop: (audio: AudioRecordingDataType) => void }) {
 
       const chunks = []; // To store audio data chunks
 
-      const mediaRecorder = new MediaRecorder(micStream, {
-        mimeType: "audio/ogg; codecs=opus", // Set the desired audio format
-      });
+      // Create an AudioRecorder instance
+      const audioRecorder = new AudioRecorder(micStream);
 
-      obj.current.mediaRecorder = mediaRecorder;
-
-      mediaRecorder.addEventListener("dataavailable", (event) => {
+      audioRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
-      });
+      };
 
-      mediaRecorder.addEventListener("stop", () => {
-        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+      audioRecorder.onstop = async () => {
+        const pcmBlob = new Blob(chunks, { type: "audio/wav" });
+
+        // Convert PCM to AAC using audio-recorder-polyfill
+        const aacBlob = await audioRecorder.convertToAAC(pcmBlob);
+
         const recordingData = {
-          blob: blob,
+          blob: aacBlob,
           duration: audioContext.currentTime, // Use audioContext's time instead of audioBuffer's duration
           graphData: obj.current.graphData ?? [],
         };
 
         updateAudioRecording(recordingData);
         props.onStop(recordingData);
-      });
+      };
 
-      mediaRecorder.start();
+      audioRecorder.start();
       loop();
     } catch (error) {
       console.log("error", error);
